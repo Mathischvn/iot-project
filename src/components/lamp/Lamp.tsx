@@ -1,5 +1,5 @@
 // src/pages/Lamp.tsx
-import { useMemo, useState } from "react"
+import {useEffect, useMemo, useState} from "react"
 import { Lightbulb } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator"
 
 export default function Lamp() {
     const [isOn, setIsOn] = useState(false)
-    const [brightness, setBrightness] = useState(50)
+    const [brightness, setBrightness] = useState(0)
     const [logs, setLogs] = useState<string[]>(["Lamp initialized."])
 
     const iconClasses = useMemo(
@@ -41,7 +41,11 @@ export default function Lamp() {
         const v = Math.max(0, Math.min(100, Number(e.target.value) || 0))
         setBrightness(v)
     }
-
+    useEffect(() => {
+        if(!isOn){
+            setBrightness(0)
+        }
+    })
     return (
         <div className="grid gap-6 md:grid-cols-3">
             <Card className="md:col-span-2">
@@ -82,7 +86,7 @@ export default function Lamp() {
                                 <span className="text-sm text-muted-foreground">%</span>
                             </div>
                         </div>
-                        <Slider value={[brightness]} min={0} max={100} step={1} onValueChange={handleSlider} />
+                        <Slider value={[brightness]} min={0} max={100} step={1} onValueChange={handleSlider} disabled={!isOn}/>
                     </div>
                 </CardContent>
             </Card>
