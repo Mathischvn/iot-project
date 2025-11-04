@@ -1,0 +1,9 @@
+-- CreateTable
+CREATE TABLE "Thing" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "state" JSONB,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
