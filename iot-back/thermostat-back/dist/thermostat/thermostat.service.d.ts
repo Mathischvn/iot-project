@@ -4,9 +4,12 @@ export declare class ThermostatService implements OnModuleInit, OnModuleDestroy 
     private readonly logger;
     private state;
     private simulationInterval;
+    private readonly gatewayUrl;
+    private readonly myUrl;
     constructor();
-    onModuleInit(): void;
+    onModuleInit(): Promise<void>;
     onModuleDestroy(): void;
+    private registerToGateway;
     private startSimulation;
     private simulate;
     getState(): ThermostatState;

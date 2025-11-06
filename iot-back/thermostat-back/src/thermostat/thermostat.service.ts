@@ -4,6 +4,7 @@ import {
   OnModuleInit,
   OnModuleDestroy,
 } from '@nestjs/common';
+import axios from 'axios';
 import {
   ThermostatState,
   UpdateTargetDto,
@@ -16,6 +17,11 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
   private state: ThermostatState;
   private simulationInterval: NodeJS.Timeout;
 
+  // URLs (peuvent venir d'un .env)
+  private readonly gatewayUrl =
+    process.env.GATEWAY_URL || 'http://localhost:3000';
+  private readonly myUrl = process.env.SELF_URL || 'http://localhost:3002';
+
   constructor() {
     this.state = {
       temperature: 20.0,
@@ -25,8 +31,10 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  onModuleInit() {
+  // Démarrage: simulation + enregistrement auprès du Gateway
+  async onModuleInit() {
     this.startSimulation();
+    await this.registerToGateway();
     this.logger.log('Thermostat service started');
   }
 
@@ -36,6 +44,24 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // ---- Enregistrement auprès du Gateway ----
+  private async registerToGateway() {
+    try {
+      await axios.post(`${this.gatewayUrl}/register`, {
+        name: 'thermostat1',
+        type: 'thermostat',
+        url: this.myUrl,
+        state: this.getState(),
+      });
+      this.logger.log('✅ Thermostat enregistré sur le Gateway');
+    } catch (e: any) {
+      this.logger.error(
+        `❌ Enregistrement Gateway échoué: ${e?.message || e}`,
+      );
+    }
+  }
+
+  // ---- Simulation interne toutes les 5s ----
   private startSimulation() {
     this.simulationInterval = setInterval(() => {
       this.simulate();

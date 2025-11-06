@@ -8,14 +8,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var ThermostatService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ThermostatService = void 0;
 const common_1 = require("@nestjs/common");
+const axios_1 = __importDefault(require("axios"));
 let ThermostatService = ThermostatService_1 = class ThermostatService {
     logger = new common_1.Logger(ThermostatService_1.name);
     state;
     simulationInterval;
+    gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3000';
+    myUrl = process.env.SELF_URL || 'http://localhost:3002';
     constructor() {
         this.state = {
             temperature: 20.0,
@@ -24,13 +30,28 @@ let ThermostatService = ThermostatService_1 = class ThermostatService {
             isHeating: false,
         };
     }
-    onModuleInit() {
+    async onModuleInit() {
         this.startSimulation();
+        await this.registerToGateway();
         this.logger.log('Thermostat service started');
     }
     onModuleDestroy() {
         if (this.simulationInterval) {
             clearInterval(this.simulationInterval);
+        }
+    }
+    async registerToGateway() {
+        try {
+            await axios_1.default.post(`${this.gatewayUrl}/register`, {
+                name: 'thermostat1',
+                type: 'thermostat',
+                url: this.myUrl,
+                state: this.getState(),
+            });
+            this.logger.log('✅ Thermostat enregistré sur le Gateway');
+        }
+        catch (e) {
+            this.logger.error(`❌ Enregistrement Gateway échoué: ${e?.message || e}`);
         }
     }
     startSimulation() {
