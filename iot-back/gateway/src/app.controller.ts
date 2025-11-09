@@ -1,59 +1,53 @@
-import {Body, Controller, Get, Param, Patch, Post} from '@nestjs/common';
-import {GatewayService} from './app.service';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { GatewayService } from './app.service';
 
 @Controller()
 export class GatewayController {
-  constructor(
-    private readonly gatewayService: GatewayService,
-  ) {}
+  constructor(private readonly gatewayService: GatewayService) {}
 
-  // Enregistrement d'un service (lamp, motion, thermostat, etc.)
   @Post('register')
-  async register(@Body() thing: any) {
-    const saved = await this.gatewayService.register(thing);
-    console.log('✅ Thing enregistré :', saved.name);
-    return saved;
+  register(@Body() thing: any) {
+    return this.gatewayService.register(thing);
   }
 
-  // Lister tous les "things"
+  @Post('gateway/update')
+  updateFromService(
+    @Body() body: { type: 'thermostat' | 'lamp' | 'motion'; state: any },
+  ) {
+    return this.gatewayService.notifyClients(body.type, body.state);
+  }
+
   @Get('things')
-  async getAll() {
+  listThings() {
     return this.gatewayService.getAll();
   }
 
-  // Détails d'un thing
-  @Get('things/:id')
-  async getOne(@Param('id') id: string) {
-    return this.gatewayService.getOne(Number(id));
+  @Get('things/type/:type')
+  listByType(@Param('type') type: string) {
+    return this.gatewayService.getAllByType(type);
   }
 
-  // Lire une propriété (ex: température, état de la lampe)
-  @Get('things/:id/:type/properties/:prop')
-  async getProperty(@Param('id') id: string, @Param('prop') prop: string) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return this.gatewayService.getProperty(Number(id), prop);
-  }
-  // Lire tous les proriété d'un thing
-  @Get('things/:id/:type/properties')
-  async getAllProperties(@Param('id') id: string) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return this.gatewayService.getAllPropertys(Number(id));
+  @Get('things/:type/properties')
+  getAllProperties(@Param('type') type: string) {
+    return this.gatewayService.getAllPropertys(type);
   }
 
-  // Modifier localement le state (pour affichage ou synchro)
+  @Get('things/:type/properties/:prop')
+  getProperty(@Param('type') type: string, @Param('prop') prop: string) {
+    return this.gatewayService.getProperty(type, prop);
+  }
+
   @Patch('things/:id/state')
-  async updateState(@Param('id') id: string, @Body() body: any) {
+  setState(@Param('id') id: string, @Body() body: any) {
     return this.gatewayService.updateState(Number(id), body);
   }
 
-  // Exécuter une action sur un thing (ex: turnOn, turnOff)
-  @Post('things/:id/actions/:action')
-  async callAction(
-    @Param('id') id: string,
+  @Post('things/:type/actions/:action')
+  callAction(
+    @Param('type') type: string,
     @Param('action') action: string,
     @Body() body: any,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return await this.gatewayService.callAction(Number(id), action, body);
+    return this.gatewayService.callAction(type, action, body);
   }
 }
