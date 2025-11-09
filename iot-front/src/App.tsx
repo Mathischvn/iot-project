@@ -10,6 +10,8 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {useEffect} from "react";
+import {GatewayApi} from "@/components/api/gatewayApi.ts";
 
 function useBreadcrumbs() {
     const { pathname } = useLocation()
@@ -23,7 +25,18 @@ function useBreadcrumbs() {
 
 export default function App() {
     const crumbs = useBreadcrumbs()
-
+    useEffect(() => {
+        (async () => {
+            try {
+                const things = await GatewayApi.listThings<any[]>();
+                if (Array.isArray(things) && things.length > 0) {
+                    localStorage.setItem("things", JSON.stringify(things));
+                }
+            } catch {
+                // ignore
+            }
+        })();
+    }, []);
     return (
         <SidebarProvider>
             <AppSidebar />

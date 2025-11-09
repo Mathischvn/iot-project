@@ -1,7 +1,7 @@
 // src/pages/Thermostat.tsx
 import { useEffect, useState, useCallback } from "react";
 import io, { Socket } from "socket.io-client";
-import { Lightbulb, Leaf, Flame } from "lucide-react";
+import { Lightbulb, Leaf } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {GatewayApi} from "@/components/api/gatewayApi.ts";
+import { GatewayApi } from "@/components/api/gatewayApi";
 
 // ============================================
 // CONSTANTS
@@ -54,89 +54,88 @@ function formatLogMessage(msg: string): string {
 }
 
 function findThermostatInThings(things: any[]): ThermostatThing | null {
-    return (
-        things.find(
-            (t) =>
-                t.type?.toLowerCase() === "thermostat" ||
-                t.name?.toLowerCase().includes("thermostat")
-        ) || null
-    );
+    return things.find(
+        (t) =>
+            t.type?.toLowerCase() === "thermostat" ||
+            t.name?.toLowerCase().includes("thermostat")
+    ) || null;
 }
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 
 export default function Thermostat() {
     // State
     const [thermostat, setThermostat] = useState<ThermostatThing | null>(null);
     const [properties, setProperties] = useState<ThermostatProperties | null>(null);
-    console.log("properties", properties);
     const [targetTemperature, setTargetTemperature] = useState(CONFIG.defaultTargetTemp);
-    const [lastHeatingTarget, setLastHeatingTarget] = useState<number>(CONFIG.defaultTargetTemp);
     const [loading, setLoading] = useState(true);
     const [logs, setLogs] = useState<string[]>(["Thermostat initialized."]);
 
-// Computed
+    // Computed
     const currentMode = properties?.mode ?? "off";
     const isOn = currentMode !== "off";
     const currentTemp = properties?.temperature ?? targetTemperature;
+
+    // ============================================
+    // LOGGING
+    // ============================================
 
     const addLog = useCallback((message: string) => {
         setLogs((prev) => [formatLogMessage(message), ...prev].slice(0, CONFIG.maxLogEntries));
     }, []);
 
+    // ============================================
+    // API CALLS
+    // ============================================
+
     const fetchThermostatProperties = useCallback(async () => {
         try {
             const data = await GatewayApi.getThingPropertiesByType("thermostat");
-            console.log(data);
             setProperties(data);
 
             if (typeof data?.targetTemperature === "number") {
-                const safe = clampTemperature(data.targetTemperature);
-                setTargetTemperature(safe);
-
-                if (data?.mode === "heating") {
-                    setLastHeatingTarget(safe);
-                }
+                setTargetTemperature(clampTemperature(data.targetTemperature));
             }
         } catch (error) {
             addLog("Erreur lors de la récupération des propriétés");
         }
     }, [addLog]);
 
-    const setMode = useCallback(
-        async (mode: ThermostatMode) => {
-            await GatewayApi.callThingAction("thermostat", "setMode", { mode });
-            addLog(`Mode changé: ${mode}`);
-        },
-        [addLog]
-    );
+    const setMode = useCallback(async (mode: ThermostatMode) => {
+        await GatewayApi.callThingAction("thermostat", "setMode", { mode });
+        addLog(`Mode changé: ${mode}`);
+    }, [addLog]);
 
-    const setTargetTemp = useCallback(
-        async (temp: number) => {
-            const safeTempTarget = clampTemperature(temp);
-            await GatewayApi.callThingAction("thermostat", "setTargetTemperature", {
-                targetTemperature: safeTempTarget,
-            });
-            addLog(`Température cible: ${safeTempTarget}°C`);
-        },
-        [addLog]
-    );
+    const setTargetTemp = useCallback(async (temp: number) => {
+        const safeTempTarget = clampTemperature(temp);
+        await GatewayApi.callThingAction("thermostat", "setTargetTemperature", {
+            targetTemperature: safeTempTarget,
+        });
+        addLog(`Température cible: ${safeTempTarget}°C`);
+    }, [addLog]);
+
+    // ============================================
+    // ACTIONS
+    // ============================================
 
     const turnOff = useCallback(async () => {
         setTargetTemperature(0);
-        setProperties((prev) =>
-            prev
-                ? {
-                    ...prev,
-                    mode: "off",
-                    temperature: 0,
-                    targetTemperature: 0,
-                }
-                : null
-        );
+        setProperties((prev) => prev ? {
+            ...prev,
+            mode: "off",
+            temperature: 0,
+            targetTemperature: 0,
+        } : null);
 
         addLog("Extinction...");
 
         try {
-            await Promise.all([setTargetTemp(0), setMode("off")]);
+            await Promise.all([
+                setTargetTemp(0),
+                setMode("off"),
+            ]);
             await fetchThermostatProperties();
         } catch (error) {
             addLog("Erreur lors de l'extinction");
@@ -144,10 +143,11 @@ export default function Thermostat() {
     }, [setTargetTemp, setMode, fetchThermostatProperties, addLog]);
 
     const turnOn = useCallback(async () => {
-        const nextTarget = targetTemperature > 0 ? targetTemperature : CONFIG.defaultTargetTemp;
+        const nextTarget = targetTemperature > 0
+            ? targetTemperature
+            : CONFIG.defaultTargetTemp;
 
         setTargetTemperature(nextTarget);
-        setLastHeatingTarget(nextTarget);
         addLog("Allumage...");
 
         try {
@@ -167,84 +167,50 @@ export default function Thermostat() {
         }
     }, [isOn, turnOff, turnOn]);
 
-    const toggleEcoHeating = useCallback(async () => {
-        if (!isOn) return;
+    const activateEcoMode = useCallback(async () => {
+        const ecoTemp = clampTemperature(CONFIG.ecoTemp);
+
+        setTargetTemperature(ecoTemp);
+        setProperties((prev) => prev ? {
+            ...prev,
+            mode: "eco",
+            targetTemperature: ecoTemp,
+        } : null);
+
+        addLog(`Mode Eco activé (${ecoTemp}°C)`);
 
         try {
-            if (currentMode === "eco") {
-                // Revenir en heating avec la dernière cible mémorisée
-                const next = clampTemperature(lastHeatingTarget || CONFIG.defaultTargetTemp);
-                setProperties((prev) =>
-                    prev
-                        ? { ...prev, mode: "heating", targetTemperature: next }
-                        : prev
-                );
-                setTargetTemperature(next);
-                await setMode("heating");
-                await setTargetTemp(next);
-                addLog(`Retour en Heating (${next}°C)`);
-            } else {
-                // Passer en eco
-                const ecoTemp = clampTemperature(CONFIG.ecoTemp);
-                // Mémoriser la cible heating actuelle avant de passer en eco
-                if (currentMode === "heating") {
-                    setLastHeatingTarget(targetTemperature);
-                }
-                setProperties((prev) =>
-                    prev
-                        ? { ...prev, mode: "eco", targetTemperature: ecoTemp }
-                        : prev
-                );
-                setTargetTemperature(ecoTemp);
-                await setMode("eco");
-                await setTargetTemp(ecoTemp);
-                addLog(`Mode Eco activé (${ecoTemp}°C)`);
-            }
+            await setMode("eco");
+            await setTargetTemp(ecoTemp);
             await fetchThermostatProperties();
         } catch (error) {
-            addLog("Erreur lors du basculement Eco/Heating");
+            addLog("Erreur lors de l'activation du mode Eco");
         }
-    }, [
-        isOn,
-        currentMode,
-        lastHeatingTarget,
-        targetTemperature,
-        setMode,
-        setTargetTemp,
-        fetchThermostatProperties,
-        addLog,
-    ]);
+    }, [setMode, setTargetTemp, fetchThermostatProperties, addLog]);
 
-    const handleSliderChange = useCallback(
-        async (values: number[]) => {
-            const newTarget = clampTemperature(values[0]);
-            setTargetTemperature(newTarget);
+    const handleSliderChange = useCallback(async (values: number[]) => {
+        const newTarget = clampTemperature(values[0]);
+        setTargetTemperature(newTarget);
+        addLog(`Nouvelle cible: ${newTarget}°C`);
 
-            // Si on est en heating, on mémorise cette valeur pour le prochain retour depuis Eco
-            if (currentMode === "heating") {
-                setLastHeatingTarget(newTarget);
-            }
-
-            addLog(`Nouvelle cible: ${newTarget}°C`);
-
-            try {
-                await setTargetTemp(newTarget);
-                await fetchThermostatProperties();
-            } catch (error) {
-                addLog("Erreur lors du changement de température");
-            }
-        },
-        [currentMode, setTargetTemp, fetchThermostatProperties, addLog]
-    );
+        try {
+            await setTargetTemp(newTarget);
+            await fetchThermostatProperties();
+        } catch (error) {
+            addLog("Erreur lors du changement de température");
+        }
+    }, [setTargetTemp, fetchThermostatProperties, addLog]);
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = clampTemperature(Number(e.target.value) || 0);
         setTargetTemperature(value);
-        if (currentMode === "heating") {
-            setLastHeatingTarget(value);
-        }
-    }, [currentMode]);
+    }, []);
 
+    // ============================================
+    // EFFECTS
+    // ============================================
+
+    // Initial load
     useEffect(() => {
         const loadThermostat = async () => {
             try {
@@ -268,15 +234,16 @@ export default function Thermostat() {
         loadThermostat();
     }, [fetchThermostatProperties, addLog]);
 
+    // Real-time updates via WebSocket
     useEffect(() => {
         if (!isOn) return;
 
         const socket: Socket = io(CONFIG.realtimeUrl, {
-            transports: ["websocket"],
+            transports: ["websocket"]
         });
 
         socket.on("thermostat:state", (state: any) => {
-            const mode: ThermostatMode = state?.mode ?? "off";
+            const mode = state?.mode ?? "off";
             const temp = clampTemperature(state?.temperature ?? targetTemperature);
             const target = clampTemperature(state?.targetTemperature ?? CONFIG.defaultTargetTemp);
 
@@ -288,12 +255,6 @@ export default function Thermostat() {
             });
 
             setTargetTemperature(target);
-
-            // Maintenir la mémoire de la cible heating
-            if (mode === "heating") {
-                setLastHeatingTarget(target);
-            }
-
             addLog(`Mise à jour: ${temp}°C → ${target}°C (${mode})`);
         });
 
@@ -321,12 +282,9 @@ export default function Thermostat() {
 
     const getBadgeText = (): string => {
         switch (currentMode) {
-            case "off":
-                return "Off";
-            case "eco":
-                return "Eco";
-            default:
-                return "On";
+            case "off": return "Off";
+            case "eco": return "Eco";
+            default: return "On";
         }
     };
 
@@ -355,12 +313,8 @@ export default function Thermostat() {
                     ) : thermostat ? (
                         <>
                             <div className="text-sm text-muted-foreground">
-                                <p>
-                                    <strong>Nom :</strong> {thermostat.name}
-                                </p>
-                                <p>
-                                    <strong>Type :</strong> {thermostat.type}
-                                </p>
+                                <p><strong>Nom :</strong> {thermostat.name}</p>
+                                <p><strong>Type :</strong> {thermostat.type}</p>
                             </div>
 
                             {properties && (
@@ -386,21 +340,15 @@ export default function Thermostat() {
                             <Button
                                 variant="outline"
                                 className="flex items-center gap-2"
-                                onClick={toggleEcoHeating}
+                                onClick={activateEcoMode}
                                 disabled={!isOn}
                             >
-                                {currentMode === "eco" ? (
-                                    <>
-                                        <Flame size={16} /> Heating
-                                    </>
-                                ) : (
-                                    <>
-                                        <Leaf size={16} /> Eco
-                                    </>
-                                )}
+                                <Leaf size={16} /> Eco
                             </Button>
-
-                            <Button variant={isOn ? "destructive" : "default"} onClick={togglePower}>
+                            <Button
+                                variant={isOn ? "destructive" : "default"}
+                                onClick={togglePower}
+                            >
                                 {isOn ? "Turn Off" : "Turn On"}
                             </Button>
                         </div>
