@@ -19,37 +19,43 @@ export class GatewayController {
     return this.gatewayService.notifyClients(body.type, body.state);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('things')
   listThings() {
     return this.gatewayService.getAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('things/type/:type')
   listByType(@Param('type') type: string) {
     return this.gatewayService.getAllByType(type);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('things/:type/properties')
   getAllProperties(@Param('type') type: string) {
     return this.gatewayService.getAllPropertys(type);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('things/:type/properties/:prop')
   getProperty(@Param('type') type: string, @Param('prop') prop: string) {
     return this.gatewayService.getProperty(type, prop);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch('things/:id/state')
   setState(@Param('id') id: string, @Body() body: any) {
     return this.gatewayService.updateState(Number(id), body);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('things/:type/actions/:action')
   callAction(
     @Param('type') type: string,
     @Param('action') action: string,
     @Body() body: any,
   ) {
-    return this.gatewayService.callAction(type, action, body);
+    return this.gatewayService.callActionFromUser(type, action, body);
   }
 }
