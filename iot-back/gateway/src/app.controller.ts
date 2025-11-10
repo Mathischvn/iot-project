@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { GatewayService } from './app.service';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
+//@UseGuards(JwtAuthGuard) // A activer pour protéger tout le gateway
 @Controller()
 export class GatewayController {
   constructor(private readonly gatewayService: GatewayService) {}
