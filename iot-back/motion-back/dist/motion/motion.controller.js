@@ -8,9 +8,6 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MotionController = void 0;
 const common_1 = require("@nestjs/common");
@@ -21,29 +18,20 @@ let MotionController = class MotionController {
     constructor(motionService) {
         this.motionService = motionService;
     }
-    getDescription() {
-        return this.motionService.getDescription();
+    info() {
+        return { name: 'Motion Sensor', type: 'motion', status: 'active' };
     }
-    getAllProperties() {
+    getProperties() {
         return this.motionService.getState();
     }
-    getDetected() {
-        return { detected: this.motionService.getState().detected };
+    detect() {
+        return this.motionService.detect();
     }
-    getArmed() {
-        return { armed: this.motionService.getState().armed };
+    clear() {
+        return this.motionService.clear();
     }
-    getSensitivity() {
-        return { sensitivity: this.motionService.getState().sensitivity };
-    }
-    setArmed(dto) {
-        return this.motionService.setArmed(dto);
-    }
-    setSensitivity(dto) {
-        return this.motionService.setSensitivity(dto);
-    }
-    trigger(dto) {
-        return this.motionService.trigger(dto);
+    toggle() {
+        return this.motionService.toggle();
     }
     reset() {
         return this.motionService.reset();
@@ -55,57 +43,40 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
-], MotionController.prototype, "getDescription", null);
+], MotionController.prototype, "info", null);
 __decorate([
     (0, common_1.Get)('properties'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], MotionController.prototype, "getAllProperties", null);
+    __metadata("design:returntype", motion_dto_1.MotionState)
+], MotionController.prototype, "getProperties", null);
 __decorate([
-    (0, common_1.Get)('properties/detected'),
+    (0, common_1.Post)('actions/detect'),
+    (0, common_1.HttpCode)(200),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], MotionController.prototype, "getDetected", null);
+    __metadata("design:returntype", motion_dto_1.MotionState)
+], MotionController.prototype, "detect", null);
 __decorate([
-    (0, common_1.Get)('properties/armed'),
+    (0, common_1.Post)('actions/clear'),
+    (0, common_1.HttpCode)(200),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], MotionController.prototype, "getArmed", null);
+    __metadata("design:returntype", motion_dto_1.MotionState)
+], MotionController.prototype, "clear", null);
 __decorate([
-    (0, common_1.Get)('properties/sensitivity'),
+    (0, common_1.Post)('actions/toggle'),
+    (0, common_1.HttpCode)(200),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], MotionController.prototype, "getSensitivity", null);
-__decorate([
-    (0, common_1.Post)('actions/setArmed'),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [motion_dto_1.UpdateArmedDto]),
-    __metadata("design:returntype", void 0)
-], MotionController.prototype, "setArmed", null);
-__decorate([
-    (0, common_1.Post)('actions/setSensitivity'),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [motion_dto_1.UpdateSensitivityDto]),
-    __metadata("design:returntype", void 0)
-], MotionController.prototype, "setSensitivity", null);
-__decorate([
-    (0, common_1.Post)('actions/trigger'),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [motion_dto_1.TriggerDto]),
-    __metadata("design:returntype", void 0)
-], MotionController.prototype, "trigger", null);
+    __metadata("design:returntype", motion_dto_1.MotionState)
+], MotionController.prototype, "toggle", null);
 __decorate([
     (0, common_1.Post)('actions/reset'),
+    (0, common_1.HttpCode)(200),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", motion_dto_1.MotionState)
 ], MotionController.prototype, "reset", null);
 exports.MotionController = MotionController = __decorate([
     (0, common_1.Controller)('motion'),
