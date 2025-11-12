@@ -4,7 +4,31 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="de41426f-55ae-4031-8713-1dd30346180e" name="Changes" comment="fix files" />
+    <list default="true" id="de41426f-55ae-4031-8713-1dd30346180e" name="Changes" comment="fix files">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/gateway/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/gateway/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/gateway/prisma/dev.db" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/prisma/dev.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/gateway/src/app.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/src/app.controller.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/gateway/src/app.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/src/app.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/gateway/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/lamp-back/src/lamp/lamp.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/lamp-back/src/lamp/lamp.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.controller.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/src/app.controller.spec.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.controller.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/src/app.module.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.service.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/src/main.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/thermostat-back/dist/tsconfig.build.tsbuildinfo" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/thermostat-back/dist/tsconfig.build.tsbuildinfo" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/thermostat-back/src/thermostat/thermostat.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/thermostat-back/src/thermostat/thermostat.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/src/components/api/axiosClient.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/api/axiosClient.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/src/components/auth/contexte/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/auth/contexte/AuthContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/src/components/auth/elements/Login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/auth/elements/Login.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/src/components/dashboard/Dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/dashboard/Dashboard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/src/components/lamp/Lamp.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/lamp/Lamp.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/src/components/motion/motion.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/motion/motion.tsx" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -27,7 +51,9 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "SHELLCHECK.PATH": "C:\\Users\\mathi\\AppData\\Roaming\\JetBrains\\WebStorm2025.2\\plugins\\Shell Script\\shellcheck.exe",
     "git-widget-placeholder": "main",
+    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "ts.external.directory.path": "C:\\Users\\mathi\\OneDrive\\Documents\\COURS\\MASTER\\MASTER 2\\IOT\\Projet 3\\iot-project\\iot-back\\gateway\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"

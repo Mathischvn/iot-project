@@ -7,200 +7,87 @@ import {
 import axios from 'axios';
 import {
   ThermostatState,
-  UpdateTargetDto,
   UpdateModeDto,
+  UpdateTargetDto,
 } from './thermostat.dto';
 
 @Injectable()
 export class ThermostatService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ThermostatService.name);
+  private state: ThermostatState;
   private simulationInterval: NodeJS.Timeout;
 
-  // Configuration
-  private readonly config = {
-    gatewayUrl: process.env.GATEWAY_URL || 'http://localhost:3000',
-    selfUrl: process.env.SELF_URL || 'http://localhost:3002',
-    instanceName: process.env.INSTANCE_NAME || 'thermostat1',
-    simulationIntervalMs: 5000,
-    requestTimeoutMs: 1000,
-  };
+  private readonly gatewayUrl =
+    process.env.GATEWAY_URL || 'http://localhost:3000';
+  private readonly selfUrl = process.env.SELF_URL || 'http://localhost:3002';
 
-  // Constantes de simulation
-  private readonly SIMULATION = {
-    heatingRate: 0.5,
-    coolingRate: 0.15,
-    minTemperature: 15,
-    maxTemperature: 30,
-    offModeFloor: 18.0,
-    ecoModeFloor: 17.0,
-    defaultTargetTemp: 19.0,
-  };
-
-  // État du thermostat
-  private state: ThermostatState = {
-    temperature: 20.0,
-    targetTemperature: 19.0,
-    mode: 'off',
-    isHeating: false,
-  };
-
-  // ============================================
-  // LIFECYCLE HOOKS
-  // ============================================
+  constructor() {
+    this.state = {
+      temperature: 20,
+      targetTemperature: 19,
+      mode: 'off',
+      isHeating: false,
+    };
+  }
 
   async onModuleInit() {
-    this.startSimulation();
     await this.registerToGateway();
-    this.logger.log('Thermostat service started');
+    this.startSimulation();
+    this.logger.log('✅ Thermostat service started');
   }
 
   onModuleDestroy() {
-    this.stopSimulation();
+    if (this.simulationInterval) clearInterval(this.simulationInterval);
   }
-
-  // ============================================
-  // COMMUNICATION AVEC LE GATEWAY
-  // ============================================
 
   private async registerToGateway() {
     try {
-      await axios.post(
-        `${this.config.gatewayUrl}/register`,
-        {
-          name: this.config.instanceName,
-          type: 'thermostat',
-          url: this.config.selfUrl,
-          state: this.getState(),
-        },
-        { timeout: this.config.requestTimeoutMs },
-      );
-      this.logger.log('✅ Thermostat enregistré sur le Gateway');
-    } catch (error) {
-      this.logger.error(
-        `❌ Enregistrement Gateway échoué: ${this.getErrorMessage(error)}`,
-      );
+      await axios.post(`${this.gatewayUrl}/register`, {
+        name: 'thermostat1',
+        type: 'thermostat',
+        url: this.selfUrl,
+        state: this.getState(),
+      });
+      this.logger.log('📡 Thermostat registered to Gateway');
+    } catch (e: any) {
+      this.logger.error(`❌ Registration failed: ${e.message}`);
     }
   }
 
   private async notifyGateway() {
     try {
-      await axios.post(
-        `${this.config.gatewayUrl}/gateway/update`,
-        {
-          type: 'thermostat',
-          state: this.getState(),
-        },
-        { timeout: this.config.requestTimeoutMs },
-      );
-    } catch (error) {
-      this.logger.warn(
-        `❌ Notification Gateway échouée: ${this.getErrorMessage(error)}`,
-      );
+      await axios.post(`${this.gatewayUrl}/gateway/update`, {
+        type: 'thermostat',
+        state: this.getState(),
+      });
+    } catch (e) {
+      this.logger.warn('⚠️ Gateway notification failed');
     }
   }
-
-  // ============================================
-  // SIMULATION
-  // ============================================
 
   private startSimulation() {
-    this.simulationInterval = setInterval(() => {
-      this.runSimulationCycle();
-    }, this.config.simulationIntervalMs);
+    this.simulationInterval = setInterval(() => this.simulate(), 5000);
   }
 
-  private stopSimulation() {
-    if (this.simulationInterval) {
-      clearInterval(this.simulationInterval);
-    }
-  }
-
-  private runSimulationCycle() {
-    const stateBefore = JSON.stringify(this.state);
-
-    this.updateTemperature();
-
-    const stateAfter = JSON.stringify(this.state);
-
-    if (stateBefore !== stateAfter) {
-      this.notifyGateway();
-    }
-  }
-
-  private updateTemperature() {
+  private simulate() {
     const { temperature, targetTemperature, mode } = this.state;
 
-    switch (mode) {
-      case 'heating':
-        this.handleHeatingMode(temperature, targetTemperature);
-        break;
-      case 'off':
-        this.handleOffMode(temperature);
-        break;
-      case 'eco':
-        this.handleEcoMode(temperature, targetTemperature);
-        break;
-    }
-
-    this.state.temperature = this.roundTemperature(this.state.temperature);
-  }
-
-  private handleHeatingMode(current: number, target: number) {
-    if (current < target) {
-      // Chauffage : augmenter vers la cible
-      this.state.temperature = Math.min(
-        current + this.SIMULATION.heatingRate,
-        target,
-      );
+    if (mode === 'heating' && temperature < targetTemperature) {
+      this.state.temperature = Math.min(temperature + 0.3, targetTemperature);
       this.state.isHeating = true;
-    } else if (current > target) {
-      // Refroidissement : baisser vers la cible
-      this.state.temperature = Math.max(
-        current - this.SIMULATION.coolingRate,
-        target,
-      );
+    } else if (mode === 'heating' && temperature >= targetTemperature) {
       this.state.isHeating = false;
-    } else {
-      // Température atteinte
+    } else if (mode === 'off') {
+      this.state.temperature = Math.max(temperature - 0.1, 17);
+      this.state.isHeating = false;
+    } else if (mode === 'eco') {
+      this.state.temperature = Math.max(temperature - 0.05, 16);
       this.state.isHeating = false;
     }
-  }
 
-  private handleOffMode(current: number) {
-    if (current > this.SIMULATION.offModeFloor) {
-      this.state.temperature = Math.max(
-        current - this.SIMULATION.coolingRate,
-        this.SIMULATION.offModeFloor,
-      );
-    }
-    this.state.isHeating = false;
+    this.state.temperature = Math.round(this.state.temperature * 10) / 10;
+    void this.notifyGateway();
   }
-
-  private handleEcoMode(current: number, target: number) {
-    // Mode Eco : chauffe uniquement si en dessous de la cible
-    // mais avec un refroidissement naturel vers le plancher eco (17°C)
-    if (current < target) {
-      // Chauffage minimal pour atteindre la cible
-      this.state.temperature = Math.min(
-        current + this.SIMULATION.heatingRate,
-        target,
-      );
-      this.state.isHeating = true;
-    } else {
-      // Refroidissement naturel vers le plancher Eco
-      if (current > this.SIMULATION.ecoModeFloor) {
-        this.state.temperature = Math.max(
-          current - this.SIMULATION.coolingRate,
-          this.SIMULATION.ecoModeFloor,
-        );
-      }
-      this.state.isHeating = false;
-    }
-  }
-
-  // ============================================
-  // API PUBLIQUE
-  // ============================================
 
   getState(): ThermostatState {
     return { ...this.state };
@@ -211,115 +98,58 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
       '@context': 'https://www.w3.org/2022/wot/td/v1.1',
       id: 'urn:dev:thermostat-001',
       title: 'Smart Thermostat',
-      description: 'Virtual thermostat',
+      description: 'Virtual thermostat device',
       properties: {
-        temperature: {
-          type: 'number',
-          readOnly: true,
-          unit: 'celsius',
-        },
-        targetTemperature: {
-          type: 'number',
-          minimum: this.SIMULATION.minTemperature,
-          maximum: this.SIMULATION.maxTemperature,
-          unit: 'celsius',
-        },
-        mode: {
-          type: 'string',
-          enum: ['off', 'heating', 'eco'],
-        },
-        isHeating: {
-          type: 'boolean',
-          readOnly: true,
-        },
+        temperature: { type: 'number', readOnly: true, unit: 'celsius' },
+        targetTemperature: { type: 'number', unit: 'celsius' },
+        mode: { type: 'string', enum: ['off', 'eco', 'heating'] },
+        isHeating: { type: 'boolean', readOnly: true },
       },
       actions: {
         setTargetTemperature: {
-          input: {
-            type: 'number',
-            minimum: this.SIMULATION.minTemperature,
-            maximum: this.SIMULATION.maxTemperature,
-          },
+          input: { type: 'number', minimum: 10, maximum: 30 },
         },
         setMode: {
-          input: {
-            type: 'string',
-            enum: ['off', 'heating', 'eco'],
-          },
+          input: { type: 'string', enum: ['off', 'eco', 'heating'] },
         },
-        reset: {
-          description: 'Reset to defaults',
-        },
+        reset: {},
       },
     };
   }
 
   setTargetTemperature(dto: UpdateTargetDto): ThermostatState {
-    this.validateTemperature(dto.targetTemperature);
-
+    if (dto.targetTemperature < 10 || dto.targetTemperature > 30) {
+      throw new Error('Target temperature must be between 10 and 30°C');
+    }
     this.state.targetTemperature = dto.targetTemperature;
-    this.logger.log(`Température cible: ${dto.targetTemperature}°C`);
-
-    this.notifyGateway();
+    this.logger.log(`🎯 Target temperature set to ${dto.targetTemperature}°C`);
+    void this.notifyGateway();
     return this.getState();
   }
 
   setMode(dto: UpdateModeDto): ThermostatState {
     this.state.mode = dto.mode;
-    this.adjustTargetForMode(dto.mode);
 
-    this.logger.log(`Mode: ${dto.mode}`);
+    if (dto.mode === 'eco') {
+      this.state.targetTemperature = 17;
+    } else if (dto.mode === 'heating' && this.state.targetTemperature < 19) {
+      this.state.targetTemperature = 19;
+    }
 
-    this.notifyGateway();
+    this.logger.log(`⚙️ Mode set to ${dto.mode}`);
+    void this.notifyGateway();
     return this.getState();
   }
 
   reset(): ThermostatState {
     this.state = {
-      temperature: 20.0,
-      targetTemperature: this.SIMULATION.defaultTargetTemp,
+      temperature: 20,
+      targetTemperature: 19,
       mode: 'off',
       isHeating: false,
     };
-
-    this.logger.log('Thermostat réinitialisé');
-
-    this.notifyGateway();
+    this.logger.log('♻️ Thermostat reset');
+    void this.notifyGateway();
     return this.getState();
-  }
-
-  // ============================================
-  // HELPERS
-  // ============================================
-
-  private validateTemperature(temp: number) {
-    if (
-      temp < this.SIMULATION.minTemperature ||
-      temp > this.SIMULATION.maxTemperature
-    ) {
-      throw new Error(
-        `La température doit être entre ${this.SIMULATION.minTemperature} et ${this.SIMULATION.maxTemperature}°C`,
-      );
-    }
-  }
-
-  private adjustTargetForMode(mode: string) {
-    if (mode === 'eco') {
-      // Mode Eco : garde la température cible actuelle
-      // L'utilisateur peut la modifier manuellement s'il le souhaite
-    } else if (
-      mode === 'heating' &&
-      this.state.targetTemperature < this.SIMULATION.defaultTargetTemp
-    ) {
-      this.state.targetTemperature = this.SIMULATION.defaultTargetTemp;
-    }
-  }
-
-  private roundTemperature(temp: number): number {
-    return Math.round(temp * 10) / 10;
-  }
-
-  private getErrorMessage(error: any): string {
-    return error?.message || String(error);
   }
 }

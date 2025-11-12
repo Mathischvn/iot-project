@@ -22,6 +22,7 @@ export class LampService implements OnModuleInit, OnModuleDestroy {
     updatedAt: new Date().toISOString(),
   };
   private simulationInterval: NodeJS.Timeout | null = null;
+  private brightnessTransitionInterval: NodeJS.Timeout | null = null;
 
   private readonly gatewayUrl =
     process.env.GATEWAY_URL || 'http://localhost:3000';
@@ -36,6 +37,8 @@ export class LampService implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy() {
     if (this.simulationInterval) clearInterval(this.simulationInterval);
+    if (this.brightnessTransitionInterval)
+      clearInterval(this.brightnessTransitionInterval);
   }
 
   private async registerToGateway() {
@@ -81,6 +84,8 @@ export class LampService implements OnModuleInit, OnModuleDestroy {
   }
 
   private simulate() {
+    if (this.brightnessTransitionInterval) return;
+
     if (this.state.power) {
       if (this.state.mode === 'eco' && this.state.brightness > 60) {
         this.state.brightness = Math.max(60, this.state.brightness - 5);
@@ -124,20 +129,51 @@ export class LampService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  private transitionBrightness(target: number, duration = 2500, steps = 25) {
+    target = Math.max(0, Math.min(100, Math.round(target)));
+
+    if (this.brightnessTransitionInterval) {
+      clearInterval(this.brightnessTransitionInterval);
+      this.brightnessTransitionInterval = null;
+    }
+
+    const start = this.state.brightness;
+    if (start === target) return;
+
+    const intervalMs = Math.max(10, Math.floor(duration / steps));
+    let stepIndex = 0;
+
+    this.brightnessTransitionInterval = setInterval(() => {
+      stepIndex++;
+      const t = Math.min(1, stepIndex / steps);
+      const next = Math.round(start + (target - start) * t);
+
+      this.state.brightness = next;
+      this.state.updatedAt = new Date().toISOString();
+      this.notifyGateway().catch(() => {});
+
+      if (t >= 1) {
+        if (this.brightnessTransitionInterval) {
+          clearInterval(this.brightnessTransitionInterval);
+          this.brightnessTransitionInterval = null;
+        }
+      }
+    }, intervalMs);
+  }
+
   setPower(dto: UpdatePowerDto): LampState {
     this.state.power = !!dto.power;
-    if (
-      this.state.power &&
-      this.state.mode === 'eco' &&
-      this.state.brightness > 60
-    )
-      this.state.brightness = 60;
-    if (
-      this.state.power &&
-      this.state.mode === 'comfort' &&
-      this.state.brightness > 80
-    )
-      this.state.brightness = 80;
+    if (this.state.power) {
+      const limit =
+        this.state.mode === 'eco'
+          ? 60
+          : this.state.mode === 'comfort'
+            ? 80
+            : null;
+      if (limit !== null && this.state.brightness > limit) {
+        this.transitionBrightness(limit);
+      }
+    }
     this.state.updatedAt = new Date().toISOString();
     this.notifyGateway().catch(() => {});
     return this.getState();
@@ -145,6 +181,12 @@ export class LampService implements OnModuleInit, OnModuleDestroy {
 
   setBrightness(dto: UpdateBrightnessDto): LampState {
     const value = Math.max(0, Math.min(100, Math.round(dto.brightness)));
+
+    if (this.brightnessTransitionInterval) {
+      clearInterval(this.brightnessTransitionInterval);
+      this.brightnessTransitionInterval = null;
+    }
+
     this.state.brightness = value;
     if (this.state.mode === 'eco' && this.state.brightness > 60)
       this.state.brightness = 60;
@@ -158,18 +200,26 @@ export class LampService implements OnModuleInit, OnModuleDestroy {
 
   setMode(dto: UpdateModeDto): LampState {
     this.state.mode = dto.mode;
-    if (this.state.power) {
-      if (dto.mode === 'eco' && this.state.brightness > 60)
-        this.state.brightness = 60;
-      if (dto.mode === 'comfort' && this.state.brightness > 80)
-        this.state.brightness = 80;
-    }
     this.state.updatedAt = new Date().toISOString();
     this.notifyGateway().catch(() => {});
+
+    if (this.state.power) {
+      const limit =
+        dto.mode === 'eco' ? 60 : dto.mode === 'comfort' ? 80 : null;
+      if (limit !== null && this.state.brightness > limit) {
+        this.transitionBrightness(limit, 2500, 25);
+      }
+    }
+
     return this.getState();
   }
 
   reset(): LampState {
+    if (this.brightnessTransitionInterval) {
+      clearInterval(this.brightnessTransitionInterval);
+      this.brightnessTransitionInterval = null;
+    }
+
     this.state = {
       power: false,
       brightness: 50,

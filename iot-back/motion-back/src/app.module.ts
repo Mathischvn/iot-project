@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-
+import { MotionService } from './motion.service';
+import { MotionController } from './motion.controller';
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [MotionController],
+  providers: [MotionService],
 })
 export class AppModule {}

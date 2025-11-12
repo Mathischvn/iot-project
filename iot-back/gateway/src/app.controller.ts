@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { GatewayService } from './app.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
@@ -57,5 +65,13 @@ export class GatewayController {
     @Body() body: any,
   ) {
     return this.gatewayService.callActionFromUser(type, action, body);
+  }
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      service: 'lamp',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

@@ -1,5 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import axiosClient from "@/components/api/axiosClient"
 import { getToken, getUser, saveSession, clearSession, type AuthUser, type AuthPayload } from "@/lib/auth"
 
 type AuthContextType = {
@@ -20,16 +21,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(getToken())
     }, [])
 
-    // ✅ Accepte n'importe quel email/mot de passe et crée une session
-    async function login(email: string, _password: string) {
-        const data: AuthPayload = {
-            token: "dev-session-token",
-            user: { id: "u_any", email, name: email.split("@")[0] || "User" },
+    // ✅ Authentification réelle avec le Gateway
+    async function login(email: string, password: string) {
+        try {
+            const response = await axiosClient.post("/auth/login", { email, password });
+            const token = response.data?.access_token;
+            if (!token) throw new Error("Aucun token reçu depuis le serveur.");
+
+            const user: AuthUser = {
+                id: "user_1",
+                email,
+                name: email.split("@")[0] || "Utilisateur",
+            };
+
+            const session: AuthPayload = { token, user };
+            saveSession(session);
+            setUser(user);
+            setToken(token);
+
+            console.info("✅ Connexion réussie :", email);
+        } catch (error: any) {
+            console.error("❌ Erreur de connexion :", error?.response?.data || error.message);
+            throw new Error("Impossible de se connecter. Vérifie ton email et ton mot de passe.");
         }
-        saveSession(data)
-        setUser(data.user)
-        setToken(data.token)
     }
+
 
     function logout() {
         clearSession()
@@ -38,10 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const value = useMemo(() => ({ user, token, login, logout }), [user, token])
+
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuthCustom() {
     const ctx = useContext(AuthContext)
     if (!ctx) throw new Error("useAuth must be used within AuthProvider")

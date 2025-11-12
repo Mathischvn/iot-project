@@ -33,16 +33,16 @@ export default function Dashboard() {
             }
         };
 
-        /*const fetchMotion = async () => {
+        const fetchMotion = async () => {
             try {
                 const data = await GatewayApi.getThingPropertiesByType("motion");
                 setMotionProps(data);
             } catch {
                 setMotionProps(null);
             }
-        };*/
+        };
 
-        Promise.all([fetchThermostat(), fetchLamp()]).finally(() =>
+        Promise.all([fetchThermostat(), fetchLamp(), fetchMotion()]).finally(() =>
             setLoading(false)
         );
     }, []);
