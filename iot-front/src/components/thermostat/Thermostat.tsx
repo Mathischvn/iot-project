@@ -243,6 +243,9 @@ export default function Thermostat() {
             transports: ["websocket"]
         });
 
+        let hasReachedTarget = false;
+        let lastLogMessage = "";
+
         socket.on("thermostat:state", (state: any) => {
             const mode = state?.mode ?? "off";
             const temp = clampTemperature(state?.temperature ?? targetTemperature);
@@ -256,13 +259,27 @@ export default function Thermostat() {
             });
 
             setTargetTemperature(target);
-            addLog(`Mise à jour: ${temp}°C → ${target}°C (${mode})`);
+
+            const logMessage = `Mise à jour: ${temp}°C → ${target}°C (${mode})`;
+            if (logMessage !== lastLogMessage) {
+                addLog(logMessage);
+                lastLogMessage = logMessage;
+            }
+
+            if (!hasReachedTarget && temp >= target) {
+                hasReachedTarget = true;
+                addLog(`✅ Température cible atteinte (${target}°C)`);
+            } else if (hasReachedTarget && temp < target - 0.3) {
+                hasReachedTarget = false;
+            }
         });
 
         return () => {
             socket.disconnect();
         };
     }, [isOn, targetTemperature, addLog]);
+
+
 
     // ============================================
     // UI HELPERS

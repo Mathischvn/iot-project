@@ -12,7 +12,7 @@ export declare class ThermostatService implements OnModuleInit, OnModuleDestroy 
     private registerToGateway;
     private notifyGateway;
     private startSimulation;
-    private simulate;
+    private simulateStep;
     getState(): ThermostatState;
     getDescription(): {
         '@context': string;

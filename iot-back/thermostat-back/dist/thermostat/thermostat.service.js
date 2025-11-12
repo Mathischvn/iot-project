@@ -19,13 +19,13 @@ const axios_1 = __importDefault(require("axios"));
 let ThermostatService = ThermostatService_1 = class ThermostatService {
     logger = new common_1.Logger(ThermostatService_1.name);
     state;
-    simulationInterval;
+    simulationInterval = null;
     gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3000';
     selfUrl = process.env.SELF_URL || 'http://localhost:3002';
     constructor() {
         this.state = {
             temperature: 15,
-            targetTemperature: 19,
+            targetTemperature: 17,
             mode: 'off',
             isHeating: false,
         };
@@ -60,45 +60,44 @@ let ThermostatService = ThermostatService_1 = class ThermostatService {
                 state: this.getState(),
             });
         }
-        catch (e) {
+        catch {
             this.logger.warn('⚠️ Gateway notification failed');
         }
     }
     startSimulation() {
-        this.simulationInterval = setInterval(() => this.simulate(), 10000);
+        this.simulationInterval = setInterval(() => {
+            this.simulateStep();
+        }, 5000);
     }
-    simulate() {
-        if (this.state.mode === 'off') {
-            this.state.mode = 'heating';
-            this.state.isHeating = true;
-            this.logger.log('🔥 Thermostat initialisé en mode heating');
-        }
+    simulateStep() {
         const { temperature, targetTemperature, mode } = this.state;
-        const randomFluctuation = (Math.random() - 0.5) * 0.6;
-        if (mode === 'heating' && temperature < targetTemperature) {
-            this.state.temperature = Math.min(temperature + 0.3, targetTemperature);
-            this.state.isHeating = true;
-        }
-        else if (mode === 'heating' && temperature >= targetTemperature) {
-            this.state.isHeating = false;
-        }
-        else {
-            if (mode === 'off') {
-                this.state.temperature = Math.max(temperature - 0.1 + randomFluctuation, 16);
-                this.state.isHeating = false;
+        if (mode === 'heating') {
+            if (temperature < targetTemperature) {
+                this.state.temperature = Math.min(temperature + 0.2, targetTemperature);
+                this.state.isHeating = true;
             }
-            else if (mode === 'eco') {
-                this.state.temperature = Math.max(temperature - 0.05 + randomFluctuation, 15);
+            else if (temperature > targetTemperature) {
+                this.state.temperature = Math.max(temperature - 0.1, targetTemperature);
                 this.state.isHeating = false;
             }
             else {
-                this.state.temperature += randomFluctuation;
+                this.state.isHeating = false;
             }
         }
-        if (Math.random() < 0.05) {
-            const suddenChange = (Math.random() - 0.5) * 2;
-            this.state.temperature += suddenChange;
-            this.logger.debug(`🌬 Variation soudaine: ${suddenChange.toFixed(1)}°C`);
+        else if (mode === 'eco') {
+            if (temperature > 17) {
+                this.state.temperature = Math.max(temperature - 0.1, 17);
+            }
+            else if (temperature < 17) {
+                this.state.temperature = Math.min(temperature + 0.05, 17);
+            }
+            this.state.isHeating = false;
+        }
+        else if (mode === 'off') {
+            if (temperature > 16) {
+                this.state.temperature = Math.max(temperature - 0.15, 16);
+            }
+            this.state.isHeating = false;
         }
         this.state.temperature = Math.round(this.state.temperature * 10) / 10;
         void this.notifyGateway();
@@ -133,8 +132,15 @@ let ThermostatService = ThermostatService_1 = class ThermostatService {
         if (dto.targetTemperature < 10 || dto.targetTemperature > 30) {
             throw new Error('Target temperature must be between 10 and 30°C');
         }
+        this.logger.log(`🎯 Nouvelle cible : ${dto.targetTemperature}°C (ancienne : ${this.state.targetTemperature}°C)`);
         this.state.targetTemperature = dto.targetTemperature;
-        this.logger.log(`🎯 Target temperature set to ${dto.targetTemperature}°C`);
+        if (dto.targetTemperature < this.state.temperature) {
+            this.state.isHeating = false;
+            this.logger.log('❄️ Refroidissement progressif enclenché');
+        }
+        else {
+            this.state.isHeating = true;
+        }
         void this.notifyGateway();
         return this.getState();
     }
@@ -145,6 +151,9 @@ let ThermostatService = ThermostatService_1 = class ThermostatService {
         }
         else if (dto.mode === 'heating' && this.state.targetTemperature < 19) {
             this.state.targetTemperature = 19;
+        }
+        else if (dto.mode === 'off') {
+            this.state.isHeating = false;
         }
         this.logger.log(`⚙️ Mode set to ${dto.mode}`);
         void this.notifyGateway();

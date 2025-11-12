@@ -15,7 +15,7 @@ import {
 export class ThermostatService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ThermostatService.name);
   private state: ThermostatState;
-  private simulationInterval: NodeJS.Timeout;
+  private simulationInterval: NodeJS.Timeout | null = null;
 
   private readonly gatewayUrl =
     process.env.GATEWAY_URL || 'http://localhost:3000';
@@ -24,7 +24,7 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
   constructor() {
     this.state = {
       temperature: 15,
-      targetTemperature: 19,
+      targetTemperature: 17,
       mode: 'off',
       isHeating: false,
     };
@@ -60,70 +60,63 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
         type: 'thermostat',
         state: this.getState(),
       });
-    } catch (e) {
+    } catch {
       this.logger.warn('⚠️ Gateway notification failed');
     }
   }
 
   /**
-   * Simulation : variation naturelle de la température toutes les 10 secondes
+   * Simulation : variation douce toutes les 5 secondes
    */
   private startSimulation() {
-    this.simulationInterval = setInterval(() => this.simulate(), 10000);
+    this.simulationInterval = setInterval(() => {
+      this.simulateStep();
+    }, 5000);
   }
 
-  private simulate() {
-    // ✅ S'assurer que le thermostat démarre en mode "heating" au début
-    if (this.state.mode === 'off') {
-      this.state.mode = 'heating';
-      this.state.isHeating = true;
-      this.logger.log('🔥 Thermostat initialisé en mode heating');
-    }
-
+  private simulateStep() {
     const { temperature, targetTemperature, mode } = this.state;
 
-    // Variation naturelle aléatoire (entre -0.3 et +0.3°C)
-    const randomFluctuation = (Math.random() - 0.5) * 0.6;
-
-    if (mode === 'heating' && temperature < targetTemperature) {
-      this.state.temperature = Math.min(temperature + 0.3, targetTemperature);
-      this.state.isHeating = true;
-    } else if (mode === 'heating' && temperature >= targetTemperature) {
-      this.state.isHeating = false;
-    } else {
-      // @ts-expect-error
-      if (mode === 'off') {
-        // Refroidissement naturel + fluctuation
-        this.state.temperature = Math.max(
-          temperature - 0.1 + randomFluctuation,
-          16,
-        );
-        this.state.isHeating = false;
-      } else if (mode === 'eco') {
-        // Refroidissement lent + fluctuation
-        this.state.temperature = Math.max(
-          temperature - 0.05 + randomFluctuation,
-          15,
-        );
+    // Mode chauffage
+    if (mode === 'heating') {
+      if (temperature < targetTemperature) {
+        this.state.temperature = Math.min(temperature + 0.2, targetTemperature);
+        this.state.isHeating = true;
+      } else if (temperature > targetTemperature) {
+        this.state.temperature = Math.max(temperature - 0.1, targetTemperature);
         this.state.isHeating = false;
       } else {
-        // Autres modes futurs
-        this.state.temperature += randomFluctuation;
+        this.state.isHeating = false;
       }
     }
 
-    // Variation ponctuelle importante (simulation d’ouverture de fenêtre par ex.)
-    if (Math.random() < 0.05) {
-      const suddenChange = (Math.random() - 0.5) * 2; // entre -1°C et +1°C
-      this.state.temperature += suddenChange;
-      this.logger.debug(`🌬 Variation soudaine: ${suddenChange.toFixed(1)}°C`);
+    // Mode éco
+    else if (mode === 'eco') {
+      if (temperature > 17) {
+        this.state.temperature = Math.max(temperature - 0.1, 17);
+      } else if (temperature < 17) {
+        this.state.temperature = Math.min(temperature + 0.05, 17);
+      }
+      this.state.isHeating = false;
     }
 
-    // Arrondir à 0.1°C
+    // Mode éteint
+    else if (mode === 'off') {
+      if (temperature > 16) {
+        this.state.temperature = Math.max(temperature - 0.15, 16);
+      }
+      this.state.isHeating = false;
+    }
+
+    // Arrondir pour plus de réalisme
     this.state.temperature = Math.round(this.state.temperature * 10) / 10;
 
     void this.notifyGateway();
   }
+
+  // ===========================
+  //     Getters & Actions
+  // ===========================
 
   getState(): ThermostatState {
     return { ...this.state };
@@ -157,8 +150,21 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
     if (dto.targetTemperature < 10 || dto.targetTemperature > 30) {
       throw new Error('Target temperature must be between 10 and 30°C');
     }
+
+    this.logger.log(
+      `🎯 Nouvelle cible : ${dto.targetTemperature}°C (ancienne : ${this.state.targetTemperature}°C)`,
+    );
+
     this.state.targetTemperature = dto.targetTemperature;
-    this.logger.log(`🎯 Target temperature set to ${dto.targetTemperature}°C`);
+
+    // Si on baisse la température -> on arrête le chauffage pour simuler le refroidissement
+    if (dto.targetTemperature < this.state.temperature) {
+      this.state.isHeating = false;
+      this.logger.log('❄️ Refroidissement progressif enclenché');
+    } else {
+      this.state.isHeating = true;
+    }
+
     void this.notifyGateway();
     return this.getState();
   }
@@ -170,6 +176,8 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
       this.state.targetTemperature = 17;
     } else if (dto.mode === 'heating' && this.state.targetTemperature < 19) {
       this.state.targetTemperature = 19;
+    } else if (dto.mode === 'off') {
+      this.state.isHeating = false;
     }
 
     this.logger.log(`⚙️ Mode set to ${dto.mode}`);
