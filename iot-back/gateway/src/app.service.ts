@@ -32,9 +32,9 @@ export class GatewayService {
     this.events.emitState(type, state);
   }
 
-  // ============================
-  //   Enregistrement et lecture
-  // ============================
+  // ============================================================
+  //  ENREGISTREMENT + LECTURE
+  // ============================================================
 
   async register(thing: any) {
     const type = String(thing.type).toLowerCase() as ThingType;
@@ -89,9 +89,9 @@ export class GatewayService {
     return updated;
   }
 
-  // ============================
-  //   Appels d’action
-  // ============================
+  // ============================================================
+  //  ACTIONS
+  // ============================================================
 
   async callAction(type: string, action: string, body: any = {}) {
     const thing = await this.getOne(type);
@@ -113,11 +113,9 @@ export class GatewayService {
     return data;
   }
 
-  // Action depuis l'utilisateur (UI) = priorité manuelle 3 minutes
   async callActionFromUser(type: string, action: string, body: any = {}) {
     this.automation.manualOverrideUntil = Date.now() + 3 * 60 * 1000;
     this.logger.log('🔓 Manual override activé (3 minutes)');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.callAction(type, action, body);
   }
 
@@ -129,9 +127,9 @@ export class GatewayService {
     );
   }
 
-  // ============================
-  //   Lecture des propriétés
-  // ============================
+  // ============================================================
+  //  PROPRIÉTÉS
+  // ============================================================
 
   async getProperty(type: string, prop: string) {
     const thing = await this.getOne(type);
@@ -157,9 +155,9 @@ export class GatewayService {
     return data;
   }
 
-  // ============================
-  //   Notifications et règles
-  // ============================
+  // ============================================================
+  //  NOTIFICATIONS + RÈGLES
+  // ============================================================
 
   async notifyClients(type: ThingType, state: any) {
     const latest = await this.prisma.thing.findFirst({
@@ -181,160 +179,94 @@ export class GatewayService {
       return { ok: true };
     }
 
-    // Appliquer les règles automatiques
     await this.runRules(type, state);
     return { ok: true };
   }
 
-  // ============================
-  //   Règles d’automatisation
-  // ============================
+  // ============================================================
+  //  RÈGLES AUTOMATISÉES
+  // ============================================================
 
   private async runRules(type: ThingType, state: any) {
     // === Rule 1 : Motion detected → Lamp ON (1 min)
     if (type === 'motion') {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (state.detected) {
         this.logger.log('💡 Motion détectée → Lamp ON 1 min');
-        console.log(
-          '[MOTION] 🔆 Mouvement détecté : allumage de la lampe pour 1 minute.',
-        );
-
         await this.safeCall(() =>
           this.callAction('lamp', 'setPower', { power: true }),
         );
 
-        // Lampe OFF après 1 minute
-        if (this.automation.motionOffTimer) {
+        if (this.automation.motionOffTimer)
           clearTimeout(this.automation.motionOffTimer);
-          console.log('[MOTION] ⏱️ Timer OFF précédent annulé.');
-        }
 
         this.automation.motionOffTimer = setTimeout(() => {
           if (!this.isManualOverrideActive()) {
-            console.log(
-              '[MOTION] 📴 1 minute écoulée → extinction automatique de la lampe.',
-            );
-            this.callAction('lamp', 'setPower', { power: false }).catch(() => {
-              console.warn(
-                '[MOTION] ⚠️ Erreur lors de l’extinction automatique.',
-              );
-            });
-          } else {
-            console.log(
-              '[MOTION] 🚫 Override manuel actif → extinction ignorée.',
+            this.callAction('lamp', 'setPower', { power: false }).catch(
+              () => {},
             );
           }
         }, 60_000);
 
         this.automation.lastMotionAt = Date.now();
-
-        // relancer timer no-motion (Rule 3)
-        console.log(
-          '[MOTION] 🔁 Redémarrage du timer "no-motion" (5 minutes).',
-        );
         this.startNoMotionTimer();
       } else {
-        console.log(
-          '[MOTION] ❌ Aucune détection → vérification du timer no-motion.',
-        );
         this.startNoMotionTimer();
       }
     }
 
-    // === Rule 2 : Temp < 19°C + Motion = Comfort mode
+    // === Rule 2 : Comfort Mode
     if (type === 'thermostat') {
       const motion = await this.peekState('motion');
       const temp = this.readTemp(state);
 
-      console.log(
-        `[THERMOSTAT] 🌡️ Température lue : ${temp}°C | Motion: ${(motion as any)?.detected}`,
-      );
-
       if ((motion as any)?.detected && temp !== null && temp < 19) {
-        this.logger.log('🔥 Comfort mode → chauffage + lampe ON');
-        console.log(
-          '[THERMOSTAT] 🔥 Temp < 19°C et mouvement détecté → activation du mode confort.',
-        );
-        await this.safeCall(() =>
-            this.callAction('thermostat', 'setMode', { mode: 'on' }),
-        );
-        await this.safeCall(() =>
-          this.callAction('thermostat', 'setMode', { mode: 'heating' }),
-        );
-        await this.safeCall(() =>
-          this.callAction('thermostat', 'setTarget', { target: 19 }),
-        );
-        await this.safeCall(() =>
-          this.callAction('lamp', 'setPower', { power: true }),
-        );
-
-        this.automation.comfortActive = true;
-        console.log(
-          '[THERMOSTAT] ✅ Mode confort activé (chauffage ON, lampe ON).',
-        );
+        if (!this.automation.comfortActive) {
+          this.logger.log('🔥 Comfort mode → chauffage + lampe ON');
+          await this.safeCall(() =>
+            this.callAction('thermostat', 'setMode', { mode: 'heating' }),
+          );
+          await this.safeCall(() =>
+            this.callAction('thermostat', 'setTarget', { target: 19 }),
+          );
+          await this.safeCall(() =>
+            this.callAction('lamp', 'setPower', { power: true }),
+          );
+          this.automation.comfortActive = true;
+          this.logger.log('✅ Mode confort activé (chauffage ON, lampe ON).');
+        }
       }
 
       if (temp !== null && temp >= 19 && this.automation.comfortActive) {
         this.logger.log('🌡️ Temp atteinte, fin Comfort mode');
-        console.log(
-          '[THERMOSTAT] 🌡️ Température atteinte → désactivation du mode confort.',
-        );
         this.automation.comfortActive = false;
       }
     }
   }
 
-  // === Rule 3 : Pas de motion 5 min → Energy saving
   private startNoMotionTimer() {
-    // Si un ancien timer existe, on le supprime
-    if (this.automation.noMotionTimer) {
+    if (this.automation.noMotionTimer)
       clearTimeout(this.automation.noMotionTimer);
-      console.log('[NO-MOTION] 🔁 Ancien timer "no-motion" annulé.');
-    }
-
-    console.log(
-      '[NO-MOTION] 🕒 Nouveau timer lancé : 5 minutes sans mouvement = mode économie d’énergie.',
-    );
 
     this.automation.noMotionTimer = setTimeout(async () => {
-      console.log(
-        '[NO-MOTION] ⏰ 5 minutes écoulées sans mouvement, vérification du manual override...',
-      );
-
-      if (this.isManualOverrideActive()) {
-        console.log(
-          '[NO-MOTION] 🚫 Override manuel actif → mode éco ignoré pour le moment.',
-        );
-        return;
-      }
-
+      if (this.isManualOverrideActive()) return;
       this.logger.log('♻️ 5 min sans mouvement → Energy Saving');
-      console.log(
-        '[NO-MOTION] ♻️ Aucune activité détectée → passage en mode économie d’énergie.',
+      await this.safeCall(() =>
+        this.callAction('lamp', 'setPower', { power: false }),
       );
-
-      await this.safeCall(async () => {
-        console.log('[NO-MOTION] 💡 Extinction de la lampe...');
-        await this.callAction('lamp', 'setPower', { power: false });
-        console.log('[NO-MOTION] ✅ Lampe éteinte.');
-      });
-
-      await this.safeCall(async () => {
-        console.log('[NO-MOTION] 🌡️ Thermostat → mode "eco"...');
-        await this.callAction('thermostat', 'setMode', { mode: 'eco' });
-        console.log('[NO-MOTION] ✅ Thermostat passé en mode éco.');
-      });
-
-      await this.safeCall(async () => {
-        console.log('[NO-MOTION] 🎯 Réglage température cible à 17°C...');
-        await this.callAction('thermostat', 'setTarget', { target: 17 });
-        console.log('[NO-MOTION] ✅ Température cible fixée à 17°C.');
-      });
+      await this.safeCall(() =>
+        this.callAction('thermostat', 'setMode', { mode: 'eco' }),
+      );
+      await this.safeCall(() =>
+        this.callAction('thermostat', 'setTarget', { target: 17 }),
+      );
+      this.automation.comfortActive = false;
     }, 5 * 60_000);
   }
 
-  // Helpers
+  // ============================================================
+  //  HELPERS
+  // ============================================================
+
   private async peekState(type: ThingType) {
     try {
       const thing = await this.getOne(type);

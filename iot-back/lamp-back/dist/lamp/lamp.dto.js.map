@@ -1,0 +1,1 @@
+{"version":3,"file":"lamp.dto.js","sourceRoot":"","sources":["../../src/lamp/lamp.dto.ts"],"names":[],"mappings":";;;AAEA,MAAa,cAAc;IACzB,KAAK,CAAU;CAChB;AAFD,wCAEC;AAED,MAAa,mBAAmB;IAC9B,UAAU,CAAS;CACpB;AAFD,kDAEC;AAED,MAAa,aAAa;IACxB,IAAI,CAA+B;CACpC;AAFD,sCAEC;AAED,MAAa,SAAS;IACpB,KAAK,CAAU;IACf,UAAU,CAAS;IACnB,IAAI,CAA+B;IACnC,SAAS,CAAS;CACnB;AALD,8BAKC"}

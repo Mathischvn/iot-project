@@ -23,7 +23,7 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
 
   constructor() {
     this.state = {
-      temperature: 20,
+      temperature: 15,
       targetTemperature: 19,
       mode: 'off',
       isHeating: false,
@@ -65,27 +65,63 @@ export class ThermostatService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Simulation : variation naturelle de la température toutes les 10 secondes
+   */
   private startSimulation() {
-    this.simulationInterval = setInterval(() => this.simulate(), 5000);
+    this.simulationInterval = setInterval(() => this.simulate(), 10000);
   }
 
   private simulate() {
+    // ✅ S'assurer que le thermostat démarre en mode "heating" au début
+    if (this.state.mode === 'off') {
+      this.state.mode = 'heating';
+      this.state.isHeating = true;
+      this.logger.log('🔥 Thermostat initialisé en mode heating');
+    }
+
     const { temperature, targetTemperature, mode } = this.state;
+
+    // Variation naturelle aléatoire (entre -0.3 et +0.3°C)
+    const randomFluctuation = (Math.random() - 0.5) * 0.6;
 
     if (mode === 'heating' && temperature < targetTemperature) {
       this.state.temperature = Math.min(temperature + 0.3, targetTemperature);
       this.state.isHeating = true;
     } else if (mode === 'heating' && temperature >= targetTemperature) {
       this.state.isHeating = false;
-    } else if (mode === 'off') {
-      this.state.temperature = Math.max(temperature - 0.1, 17);
-      this.state.isHeating = false;
-    } else if (mode === 'eco') {
-      this.state.temperature = Math.max(temperature - 0.05, 16);
-      this.state.isHeating = false;
+    } else {
+      // @ts-expect-error
+      if (mode === 'off') {
+        // Refroidissement naturel + fluctuation
+        this.state.temperature = Math.max(
+          temperature - 0.1 + randomFluctuation,
+          16,
+        );
+        this.state.isHeating = false;
+      } else if (mode === 'eco') {
+        // Refroidissement lent + fluctuation
+        this.state.temperature = Math.max(
+          temperature - 0.05 + randomFluctuation,
+          15,
+        );
+        this.state.isHeating = false;
+      } else {
+        // Autres modes futurs
+        this.state.temperature += randomFluctuation;
+      }
     }
 
+    // Variation ponctuelle importante (simulation d’ouverture de fenêtre par ex.)
+    if (Math.random() < 0.05) {
+      const suddenChange = (Math.random() - 0.5) * 2; // entre -1°C et +1°C
+      this.state.temperature += suddenChange;
+      this.logger.debug(`🌬 Variation soudaine: ${suddenChange.toFixed(1)}°C`);
+    }
+
+    // Arrondir à 0.1°C
     this.state.temperature = Math.round(this.state.temperature * 10) / 10;
+
     void this.notifyGateway();
   }
 

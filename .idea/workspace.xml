@@ -4,30 +4,21 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="de41426f-55ae-4031-8713-1dd30346180e" name="Changes" comment="fix files">
+    <list default="true" id="de41426f-55ae-4031-8713-1dd30346180e" name="Changes" comment="fit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/gateway/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/gateway/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/gateway/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iot-back/gateway/prisma/dev.db" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/prisma/dev.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/gateway/src/app.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/src/app.controller.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iot-back/gateway/src/app.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/src/app.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/gateway/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/gateway/tsconfig.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/lamp-back/src/lamp/lamp.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/lamp-back/src/lamp/lamp.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.controller.spec.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/src/app.controller.spec.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.controller.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/src/app.module.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/app.service.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/src/main.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/lamp-back/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/lamp-back/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/motion-back/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/motion-back/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-back/thermostat-back/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/thermostat-back/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iot-back/thermostat-back/dist/tsconfig.build.tsbuildinfo" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/thermostat-back/dist/tsconfig.build.tsbuildinfo" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/iot-back/thermostat-back/src/thermostat/thermostat.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-back/thermostat-back/src/thermostat/thermostat.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-front/src/components/api/axiosClient.ts" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/api/axiosClient.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-front/src/components/auth/contexte/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/auth/contexte/AuthContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-front/src/components/auth/elements/Login.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/auth/elements/Login.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-front/src/components/dashboard/Dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/dashboard/Dashboard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-front/src/components/lamp/Lamp.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/lamp/Lamp.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/iot-front/src/components/motion/motion.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/motion/motion.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/iot-front/src/components/thermostat/Thermostat.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/iot-front/src/components/thermostat/Thermostat.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/gateway.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/run.sh" beforeDir="false" afterPath="$PROJECT_DIR$/run.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,12 +41,15 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHELLCHECK.PATH": "C:\\Users\\mathi\\AppData\\Roaming\\JetBrains\\WebStorm2025.2\\plugins\\Shell Script\\shellcheck.exe",
     "git-widget-placeholder": "main",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "ts.external.directory.path": "C:\\Users\\mathi\\OneDrive\\Documents\\COURS\\MASTER\\MASTER 2\\IOT\\Projet 3\\iot-project\\iot-back\\gateway\\node_modules\\typescript\\lib",
+    "ts.external.directory.path": "C:\\Users\\mathi\\OneDrive\\Documents\\COURS\\MASTER\\MASTER 2\\IOT\\Projet 3\\iot-project\\iot-back\\motion-back\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -74,6 +68,7 @@
       <option name="presentableId" value="Default" />
       <updated>1762178954797</updated>
       <workItem from="1762178956751" duration="23000" />
+      <workItem from="1762951337673" duration="3891000" />
     </task>
     <task id="LOCAL-00001" summary="fix files">
       <option name="closed" value="true" />
@@ -83,7 +78,15 @@
       <option name="project" value="LOCAL" />
       <updated>1762725301256</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="fit">
+      <option name="closed" value="true" />
+      <created>1762941805108</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1762941805108</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -102,6 +105,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="fix files" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix files" />
+    <MESSAGE value="fit" />
+    <option name="LAST_COMMIT_MESSAGE" value="fit" />
   </component>
 </project>

@@ -203,6 +203,7 @@ export default function Thermostat() {
 
     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const value = clampTemperature(Number(e.target.value) || 0);
+        // @ts-ignore
         setTargetTemperature(value);
     }, []);
 
@@ -225,7 +226,7 @@ export default function Thermostat() {
                     await fetchThermostatProperties();
                 }
             } catch (error) {
-                addLog("Erreur lors du chargement");
+                addLog("Erreur lors du chargement", error);
             } finally {
                 setLoading(false);
             }
