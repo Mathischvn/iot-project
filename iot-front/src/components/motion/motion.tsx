@@ -48,7 +48,7 @@ export default function Motion() {
     // Simuler une détection
     async function triggerMotion() {
         pushLog("Manual trigger sent to Gateway.");
-        await GatewayApi.callThingAction("motion", "trigger");
+        await GatewayApi.callThingAction("motion", "toggle");
     }
 
     const badgeColor = useMemo(

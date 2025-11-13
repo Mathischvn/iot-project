@@ -15,24 +15,23 @@ const common_1 = require("@nestjs/common");
 const axios_1 = __importDefault(require("axios"));
 let MotionService = MotionService_1 = class MotionService {
     logger = new common_1.Logger(MotionService_1.name);
-    simulationInterval = null;
+    state = {
+        detected: false,
+        updatedAt: new Date().toISOString(),
+    };
     gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3000';
     selfUrl = process.env.SELF_URL || 'http://localhost:3003';
     instanceName = process.env.INSTANCE_NAME || 'motion1';
-    state = {
-        detected: false,
-        armed: true,
-        sensitivity: 50,
-        updatedAt: new Date().toISOString(),
-    };
+    simulationTimer = null;
+    simulationPeriod = Math.max(0, Number(process.env.SIMULATION_PERIOD_MS || '0'));
     async onModuleInit() {
         await this.registerToGateway();
-        this.startSimulation();
-        this.logger.log('🚨 Motion service started');
+        this.startSimulationIfEnabled();
+        this.logger.log('Motion service started');
     }
     onModuleDestroy() {
-        if (this.simulationInterval)
-            clearInterval(this.simulationInterval);
+        if (this.simulationTimer)
+            clearInterval(this.simulationTimer);
     }
     async registerToGateway() {
         try {
@@ -41,11 +40,11 @@ let MotionService = MotionService_1 = class MotionService {
                 type: 'motion',
                 url: this.selfUrl,
                 state: this.getState(),
-            });
-            this.logger.log('✅ Motion sensor registered on Gateway');
+            }, { timeout: 1000 });
+            this.logger.log('✅ Motion registered to Gateway');
         }
         catch (e) {
-            this.logger.error(`❌ Gateway registration failed: ${e?.message}`);
+            this.logger.warn(`❌ Registration failed: ${e?.message || e}`);
         }
     }
     async notifyGateway() {
@@ -53,87 +52,49 @@ let MotionService = MotionService_1 = class MotionService {
             await axios_1.default.post(`${this.gatewayUrl}/gateway/update`, {
                 type: 'motion',
                 state: this.getState(),
-            });
+            }, { timeout: 1000 });
         }
         catch (e) {
-            this.logger.warn(`⚠️ notifyGateway failed: ${e?.message}`);
-        }
-    }
-    startSimulation() {
-        this.simulationInterval = setInterval(() => this.simulate(), 5000);
-    }
-    simulate() {
-        if (!this.state.armed)
-            return;
-        const chance = this.state.sensitivity / 100;
-        if (Math.random() < chance * 0.2) {
-            this.state.detected = !this.state.detected;
-            this.state.updatedAt = new Date().toISOString();
-            this.logger.log(`🎯 Motion ${this.state.detected ? 'detected' : 'cleared'}`);
-            this.notifyGateway().catch(() => { });
+            this.logger.warn(`❌ notifyGateway: ${e?.message || e}`);
         }
     }
     getState() {
         return { ...this.state };
     }
-    getDescription() {
-        return {
-            '@context': 'https://www.w3.org/2022/wot/td/v1.1',
-            id: 'urn:dev:motion-001',
-            title: 'Virtual Motion Sensor',
-            description: 'A simulated motion detector',
-            properties: {
-                detected: { type: 'boolean', readOnly: true },
-                armed: { type: 'boolean' },
-                sensitivity: {
-                    type: 'number',
-                    minimum: 0,
-                    maximum: 100,
-                    unit: 'percent',
-                },
-            },
-            actions: {
-                setArmed: { input: { type: 'boolean' } },
-                setSensitivity: { input: { type: 'number', minimum: 0, maximum: 100 } },
-                trigger: { input: { type: 'boolean' } },
-                reset: { description: 'Reset to defaults' },
-            },
-        };
-    }
-    setArmed(dto) {
-        this.state.armed = !!dto.armed;
-        if (!this.state.armed)
-            this.state.detected = false;
+    detect() {
+        this.state.detected = true;
         this.state.updatedAt = new Date().toISOString();
-        this.logger.log(`🔒 Sensor ${this.state.armed ? 'armed' : 'disarmed'}`);
+        this.state.lastDetectedAt = this.state.updatedAt;
         this.notifyGateway().catch(() => { });
         return this.getState();
     }
-    setSensitivity(dto) {
-        const s = Math.max(0, Math.min(100, Math.round(dto.sensitivity)));
-        this.state.sensitivity = s;
+    clear() {
+        this.state.detected = false;
         this.state.updatedAt = new Date().toISOString();
-        this.logger.log(`🎚 Sensitivity set to ${s}`);
         this.notifyGateway().catch(() => { });
         return this.getState();
     }
-    trigger(dto) {
-        this.state.detected = !!dto.detected;
-        this.state.updatedAt = new Date().toISOString();
-        this.logger.log(`🚨 Triggered manually: ${this.state.detected}`);
-        this.notifyGateway().catch(() => { });
-        return this.getState();
+    toggle() {
+        return this.state.detected ? this.clear() : this.detect();
     }
     reset() {
         this.state = {
             detected: false,
-            armed: true,
-            sensitivity: 50,
             updatedAt: new Date().toISOString(),
         };
-        this.logger.log('♻️ Motion sensor reset');
         this.notifyGateway().catch(() => { });
         return this.getState();
+    }
+    startSimulationIfEnabled() {
+        if (!this.simulationPeriod)
+            return;
+        this.simulationTimer = setInterval(() => {
+            const rnd = Math.random();
+            if (rnd < 0.5)
+                this.detect();
+            else
+                this.clear();
+        }, this.simulationPeriod);
     }
 };
 exports.MotionService = MotionService;

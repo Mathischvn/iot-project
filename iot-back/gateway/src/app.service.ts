@@ -174,11 +174,6 @@ export class GatewayService {
 
     this.emitState(type, state);
 
-    if (this.isManualOverrideActive()) {
-      this.logger.log('⏸️ Automation ignorée (manual override actif)');
-      return { ok: true };
-    }
-
     await this.runRules(type, state);
     return { ok: true };
   }
@@ -206,6 +201,7 @@ export class GatewayService {
             );
           }
         }, 60_000);
+        this.logger.log(' Lamp eteinte avec succès après 1 minute.');
 
         this.automation.lastMotionAt = Date.now();
         this.startNoMotionTimer();
@@ -240,6 +236,7 @@ export class GatewayService {
         this.logger.log('🌡️ Temp atteinte, fin Comfort mode');
         this.automation.comfortActive = false;
       }
+    
     }
   }
 

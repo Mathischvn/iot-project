@@ -12,7 +12,7 @@ export class MotionService implements OnModuleInit, OnModuleDestroy {
   };
 
   private readonly gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3000';
-  private readonly selfUrl = process.env.SELF_URL || 'http://localhost:3002';
+  private readonly selfUrl = process.env.SELF_URL || 'http://localhost:3003';
   private readonly instanceName = process.env.INSTANCE_NAME || 'motion1';
 
   private simulationTimer: NodeJS.Timeout | null = null;
