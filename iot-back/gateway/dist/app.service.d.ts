@@ -7,11 +7,46 @@ export declare class GatewayService {
     constructor(events: EventsGateway);
     private automation;
     private emitState;
-    register(thing: any): Promise<any>;
-    getAll(): Promise<any>;
-    getAllByType(type: string): Promise<any>;
-    getOne(type: string): Promise<any>;
-    updateState(id: number, newState: any): Promise<any>;
+    register(thing: any): Promise<{
+        id: number;
+        name: string;
+        url: string;
+        type: string;
+        state: import("@prisma/client/runtime/library").JsonValue | null;
+        createdAt: Date;
+    }>;
+    getAll(): Promise<{
+        id: number;
+        name: string;
+        url: string;
+        type: string;
+        state: import("@prisma/client/runtime/library").JsonValue | null;
+        createdAt: Date;
+    }[]>;
+    getAllByType(type: string): Promise<{
+        id: number;
+        name: string;
+        url: string;
+        type: string;
+        state: import("@prisma/client/runtime/library").JsonValue | null;
+        createdAt: Date;
+    }[]>;
+    getOne(type: string): Promise<{
+        id: number;
+        name: string;
+        url: string;
+        type: string;
+        state: import("@prisma/client/runtime/library").JsonValue | null;
+        createdAt: Date;
+    }>;
+    updateState(id: number, newState: any): Promise<{
+        id: number;
+        name: string;
+        url: string;
+        type: string;
+        state: import("@prisma/client/runtime/library").JsonValue | null;
+        createdAt: Date;
+    }>;
     callAction(type: string, action: string, body?: any): Promise<any>;
     callActionFromUser(type: string, action: string, body?: any): Promise<any>;
     private isManualOverrideActive;

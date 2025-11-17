@@ -6,13 +6,17 @@ export declare class AuthController {
         email: string;
         password: string;
     }): Promise<{
-        access_token: any;
+        access_token: string;
     }>;
     login(body: {
         email: string;
         password: string;
     }): Promise<{
-        access_token: any;
+        access_token: string;
     }>;
-    getMe(req: any): Promise<any>;
+    getMe(req: any): Promise<{
+        id: string;
+        createdAt: Date;
+        email: string;
+    }>;
 }
