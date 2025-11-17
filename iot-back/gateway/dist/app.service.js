@@ -151,9 +151,7 @@ let GatewayService = GatewayService_1 = class GatewayService {
                 if (this.automation.motionOffTimer)
                     clearTimeout(this.automation.motionOffTimer);
                 this.automation.motionOffTimer = setTimeout(() => {
-                    if (!this.isManualOverrideActive()) {
-                        this.callAction('lamp', 'setPower', { power: false }).catch(() => { });
-                    }
+                    this.callAction('lamp', 'setPower', { power: false }).catch(() => { });
                 }, 60_000);
                 this.logger.log(' Lamp eteinte avec succès après 1 minute.');
                 this.automation.lastMotionAt = Date.now();
