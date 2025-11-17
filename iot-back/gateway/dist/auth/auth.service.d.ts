@@ -8,15 +8,11 @@ export declare class AuthService {
         email: string;
         password: string;
     }): Promise<{
-        access_token: string;
+        access_token: any;
     }>;
     login(email: string, password: string): Promise<{
-        access_token: string;
+        access_token: any;
     }>;
-    getMe(userId: string): Promise<{
-        id: string;
-        createdAt: Date;
-        email: string;
-    }>;
+    getMe(userId: string): Promise<any>;
     private generateToken;
 }
